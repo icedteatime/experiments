@@ -1,12 +1,37 @@
 
 import json
+import random
+
+import torch
 
 def awesomize(logging_function):
     def new_logging_function(item, *args, **kwargs):
         assert isinstance(item, dict), "Requires dictionary type."
-        json_line = json.dumps(item)
+        json_line = json.dumps(item, default=default_json)
         logging_function(json_line, *args, **kwargs)
 
     return new_logging_function
+
+def default_json(item):
+    match item:
+        case torch.Tensor(data=t):
+            return t.tolist()
+
+def print_lines(item, key: tuple, label="x", sample_only=True):
+    match item:
+        case torch.Tensor(data=t):
+            indices = "][".join(map(str, key))
+            print({f"{label}.shape": item.shape,
+                   f"{label}[{indices}].shape": item[key].shape,
+                   "GradientFunction": item.grad_fn.name()})
+
+            if sample_only and len(item[key]) > 5:
+                indices = list(range(2)) + sorted(random.sample(range(2, len(item[key])), 2))
+            else:
+                indices = range(len(item[key]))
+
+            for index in indices:
+                indices = "][".join(map(str, (*key, index)))
+                print({f"{label}[{indices}]": item[key][index]})
 
 print = awesomize(print)
