@@ -2,7 +2,10 @@
 import json
 import random
 
+import numpy as np
 import torch
+
+import collections.abc
 
 def awesomize(logging_function):
     def new_logging_function(item, *args, **kwargs):
@@ -14,8 +17,14 @@ def awesomize(logging_function):
 
 def default_json(item):
     match item:
-        case torch.Tensor(data=t):
-            return t.tolist()
+        case np.ndarray(data=data) | torch.Tensor(data=data):
+            return data.tolist()
+
+        case collections.abc.Sequence():
+            return list(item)
+
+        case other:
+            return str(other)
 
 def print_lines(item, key: tuple, label="x", sample_only=True):
     match item:
@@ -23,7 +32,7 @@ def print_lines(item, key: tuple, label="x", sample_only=True):
             indices = "][".join(map(str, key))
             print({f"{label}.shape": item.shape,
                    f"{label}[{indices}].shape": item[key].shape,
-                   "GradientFunction": item.grad_fn.name()})
+                   "GradientFunction": item.grad_fn and item.grad_fn.name() or None})
 
             if sample_only and len(item[key]) > 5:
                 indices = list(range(2)) + sorted(random.sample(range(2, len(item[key])), 2))
