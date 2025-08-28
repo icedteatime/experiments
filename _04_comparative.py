@@ -55,15 +55,21 @@ class PairsDataset(torch.utils.data.Dataset):
 
         # set classes to same size
         all_sets = [{"Same": random_permute(dataset.data[dataset.targets == label])[:size],
+                     "Same2": random_permute(dataset.data[dataset.targets == label])[:size],
                      "Different": random_permute(dataset.data[dataset.targets != label])[:size]}
                     for label in range(10)]
 
         # equal size of same pairs and different pairs
-        half_size = size//2
-        all_sets = [{"SamePairs": torch.stack([set_["Same"][:half_size], set_["Same"][half_size:2*half_size]]).transpose(0, 1),
-                     "DifferentPairs": torch.stack([set_["Same"][:half_size],
-                                                    set_["Different"][half_size:2*half_size]]).transpose(0, 1)}
+        # half_size = size//2
+        # all_sets = [{"SamePairs": torch.stack([set_["Same"][:half_size], set_["Same"][half_size:2*half_size]]).transpose(0, 1),
+        #              "DifferentPairs": torch.stack([set_["Same"][:half_size],
+        #                                             set_["Different"][half_size:2*half_size]]).transpose(0, 1)}
+        #             for set_ in all_sets]
+        all_sets = [{"SamePairs": torch.stack([set_["Same"], set_["Same2"]]).transpose(0, 1),
+                     "DifferentPairs": torch.stack([set_["Same"],
+                                                    set_["Different"]]).transpose(0, 1)}
                     for set_ in all_sets]
+
 
         # ensure different pairs are balanced
         def random_flip_pairs(pairs):
@@ -83,7 +89,7 @@ class PairsDataset(torch.utils.data.Dataset):
             permutation = torch.randperm(len(combined))
             combined = combined[permutation]
 
-            labels = permutation < half_size
+            labels = permutation < len(array1)
 
             return combined, labels
 
@@ -100,18 +106,6 @@ class PairsDataset(torch.utils.data.Dataset):
 
         return all_data, all_labels
 
-    def forward0(self, x):
-        x = torch.flatten(x, 1)
-        self.fc1 = nn.Linear(9216, 128)
-        x = self.fc1(x)
-        x = F.relu(x)
-        x = self.dropout2(x)
-        self.dropout2 = nn.Dropout(0.5)
-        self.fc2 = nn.Linear(128, 10)
-        x = self.fc2(x)
-
-        output = F.log_softmax(x, dim=1)
-
 class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
@@ -120,29 +114,22 @@ class Model(nn.Module):
             nn.Conv2d(in_channels=2,
                       out_channels=32,
                       kernel_size=(3, 3),
-                      stride=1),
+                      groups=2),
             nn.ReLU(),
             nn.Conv2d(in_channels=32,
                       out_channels=64,
                       kernel_size=(3, 3),
-                      stride=1),
+                      groups=2),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=(2, 2),
                          stride=(2, 2)),
-            nn.Dropout(0.15),
-
-            nn.Conv2d(in_channels=64,
-                      out_channels=64,
-                      kernel_size=(3, 3),
-                      stride=1),
-            nn.ReLU(),
-            nn.Dropout(0.15),
+            nn.Dropout2d(0.15),
 
             nn.Flatten(),
 
-            nn.Linear(in_features=6400, out_features=128),
+            nn.Linear(in_features=9216, out_features=128),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.25),
             nn.Linear(in_features=128, out_features=2),
         )
 
@@ -153,6 +140,7 @@ class Model(nn.Module):
 
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
+    losses = []
     for batch_index, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
@@ -162,13 +150,15 @@ def train(args, model, device, train_loader, optimizer, epoch):
         loss.backward()
 
         optimizer.step()
+        losses.append(loss.item())
 
         if batch_index % args.log_interval == 0:
             print({"Epoch": epoch,
                    "Batch": batch_index,
                    "Loss": loss.item()})
     
-    return loss.item()
+    print({"LossesAverage": sum(losses) / len(losses)})
+    return sum(losses) / len(losses)
 
 
 def test(model, device, test_loader, epoch):
@@ -217,6 +207,7 @@ def run(**kwargs):
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
 
     for epoch in range(1, args.epochs + 1):
+        print({"LearningRateLog10": np.log10(optimizer.param_groups[0]["lr"])})
         loss = train(args, model, device, train_loader, optimizer, epoch)
         test(model, device, test_loader, epoch)
         scheduler.step(metrics=loss)
