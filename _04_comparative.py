@@ -66,8 +66,7 @@ class PairsDataset(torch.utils.data.Dataset):
         #                                             set_["Different"][half_size:2*half_size]]).transpose(0, 1)}
         #             for set_ in all_sets]
         all_sets = [{"SamePairs": torch.stack([set_["Same"], set_["Same2"]]).transpose(0, 1),
-                     "DifferentPairs": torch.stack([set_["Same"],
-                                                    set_["Different"]]).transpose(0, 1)}
+                     "DifferentPairs": torch.stack([set_["Same"], set_["Different"]]).transpose(0, 1)}
                     for set_ in all_sets]
 
 
