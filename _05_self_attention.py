@@ -37,6 +37,8 @@ class SelfAttention(nn.Module):
         self.keys = nn.Linear(embedding_dimension, key_dimension, bias=False)
         self.queries = nn.Linear(embedding_dimension, key_dimension, bias=False)
         self.values = nn.Linear(embedding_dimension, value_dimension, bias=False)
+
+        # self.dropout = nn.Dropout(0.2)
         
     def forward(self, x):
         keys = self.keys(x)
@@ -46,7 +48,21 @@ class SelfAttention(nn.Module):
         # x = queries @ keys.transpose(-2, -1) / self.key_dimension**0.5
         # x = torch.softmax(x, dim=-1) @ values
         x = nn.functional.scaled_dot_product_attention(queries, keys, values, dropout_p=-1)
+        # x = self.dropout(x)
 
+        return x
+
+
+class Parallel(nn.Module):
+    def __init__(self, networks,
+                 reduction=lambda x: torch.cat(x, dim=-1)):
+        super().__init__()
+        self.networks = nn.ModuleList(networks)
+        self.reduction = reduction
+
+    def forward(self, x):
+        x = self.reduction([network(x)
+                            for network in self.networks])
         return x
 
 class Residual(nn.Module):
@@ -73,19 +89,26 @@ class LambdaModule(nn.Module):
     def forward(self, x):
         return self.function(x)
 
+
 class Model(nn.Module):
     def __init__(self,
-                 num_discrete_classes=8,
+                 num_discrete_classes=32,
                  embedding_dimension=8,
-                 key_dimension=4,
-                 value_dimension=16,
+                 key_dimension=8,
+                 num_heads=2,
                  num_blocks=2):
         super(Model, self).__init__()
 
         self.key_dimension = key_dimension
-        image_size = 28*28
+        value_dimension = embedding_dimension // num_heads
+        pool_height = 2
+        pool_width = 2
+        image_size = 28*28 // pool_height // pool_width
+
         self.embedding = nn.Embedding(num_discrete_classes, embedding_dimension)
         self.positional_embedding = nn.Embedding(image_size, embedding_dimension)
+
+        activation = nn.GELU
 
         # block input and output shape is: batch, image_size, embedding_dimension
         block_make = lambda block_index: nn.Sequential(
@@ -94,32 +117,42 @@ class Model(nn.Module):
                     nn.LayerNorm(normalized_shape=(image_size, embedding_dimension)),
                     *[LambdaModule(lambda x: x + self.positional_embedding.weight)
                       for _ in range(block_index == 0)],
-                    SelfAttention(embedding_dimension=embedding_dimension,
-                                  key_dimension=key_dimension,
-                                  value_dimension=value_dimension),
+                    Parallel([SelfAttention(embedding_dimension=embedding_dimension,
+                                            key_dimension=key_dimension,
+                                            value_dimension=value_dimension)
+                              for _ in range(num_heads)]),
+                    nn.Dropout(0.5),
                     nn.Flatten(),
-                    nn.Linear(image_size*value_dimension, image_size*embedding_dimension),
+                    nn.Linear(image_size*embedding_dimension, image_size*embedding_dimension),
+                    activation(),
+                    nn.Dropout(0.5),
                     LambdaModule(lambda x: x.reshape(-1, image_size, embedding_dimension)))),
             Residual(
                 nn.Sequential(
                     nn.Flatten(),
                     nn.LayerNorm(normalized_shape=image_size*embedding_dimension),
-                    nn.Linear(image_size*embedding_dimension, image_size*embedding_dimension),
-                    nn.ReLU(),
-                    nn.Linear(image_size*embedding_dimension, image_size*embedding_dimension),
+                    nn.Linear(image_size*embedding_dimension, image_size*2*embedding_dimension),
+                    activation(),
+                    nn.Dropout(0.5),
+                    nn.Linear(image_size*2*embedding_dimension, image_size*embedding_dimension),
+                    activation(),
+                    nn.Dropout(0.5),
                     LambdaModule(lambda x: x.reshape(-1, image_size, embedding_dimension)))))
 
         self.sequence = nn.Sequential(
+            # LambdaModule(lambda x: 255 - x),
+            nn.MaxPool2d(kernel_size=(pool_height, pool_width),
+                         stride=(pool_height, pool_width)),
             nn.Flatten(),
             LambdaModule(lambda x: x // (256 // num_discrete_classes)),
             self.embedding,
             *(block_make(index)
               for index in range(num_blocks)),
             nn.Flatten(),
-            nn.Linear(image_size*embedding_dimension, 128),
-            nn.ReLU(),
-            nn.Dropout(0.15),
-            nn.Linear(128, 10)
+            nn.LayerNorm(image_size*embedding_dimension),
+            activation(),
+            nn.Dropout(0.5),
+            nn.Linear(image_size*embedding_dimension, 10),
         )
 
     def forward(self, x):
@@ -193,7 +226,7 @@ def run(**kwargs):
     model = Model().to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=0)
 
     for epoch in range(1, args.epochs + 1):
         print({"LearningRateLog10": np.log10(optimizer.param_groups[0]["lr"])})

@@ -1,4 +1,9 @@
 
+"""
+To promote logs that are clearer and more easily processed (no need to use regex)
+and resilient to changes, this module encourages the use of JSON for logging.
+"""
+
 import json
 import random
 
@@ -9,7 +14,7 @@ import collections.abc
 
 def awesomize(logging_function):
     def new_logging_function(item, *args, **kwargs):
-        assert isinstance(item, dict), "Requires dictionary type."
+        assert isinstance(item, dict), f"Expected dictionary type, got {type(item)}."
         json_line = json.dumps(item, default=default_json)
         logging_function(json_line, *args, **kwargs)
 
@@ -19,14 +24,13 @@ def default_json(item):
     match item:
         case np.ndarray(data=data) | torch.Tensor(data=data):
             return data.tolist()
-
         case collections.abc.Sequence():
             return list(item)
-
         case other:
             return str(other)
 
-def print_lines(item, key: tuple, label="x", sample_only=True):
+
+def print_lines(item, key: tuple = (0,), label="x", sample_only=True):
     match item:
         case torch.Tensor(data=t):
             indices = "][".join(map(str, key))
@@ -42,5 +46,15 @@ def print_lines(item, key: tuple, label="x", sample_only=True):
             for index in indices:
                 indices = "][".join(map(str, (*key, index)))
                 print({f"{label}[{indices}]": item[key][index]})
+
+def summary(item, label="x"):
+    key = (0,)
+    match item:
+        case torch.Tensor(data=t):
+            indices = "][".join(map(str, key))
+            print({f"{label}.shape": item.shape,
+                   f"{label}[{indices}].shape": item[key].shape,
+                   "GradientFunction": item.grad_fn and item.grad_fn.name() or None})
+
 
 print = awesomize(print)
