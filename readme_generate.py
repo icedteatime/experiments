@@ -12,15 +12,25 @@ metadata = [{"Module": importlib.import_module(file),
             for file in sorted(files)]
 
 def template(metadata):
-    match metadata:
-        case {"Module": module, ".py": py, ".ipynb": ipynb}:
-            py = f"[py]({py})"
-            ipynb = f"[nb]({ipynb})" if ipynb else ""
-            model_description = str(module.Model())
-            if len(model_description.splitlines()) > 15:
-                model_description = "\n".join(model_description.splitlines()[:20]) + "\n..."
+    module = metadata["Module"]
+    py = f"[py]({metadata[".py"]})"
+    ipynb = f"[nb]({metadata[".ipynb"]})" if metadata[".ipynb"] else ""
 
-            return f"""
+    model_description = str(module.Model())
+    model_lines = model_description.splitlines()
+    model_lines = model_lines[1:-1]
+
+    min_space_prefix = min(len(line) - len(line.lstrip())
+                           for line in model_lines)
+    model_lines = [line[min_space_prefix:]
+                   for line in model_lines]
+
+    if len(model_lines) > 20:
+        model_lines = model_lines[:18] + ["..."]
+
+    model_description = "\n".join(model_lines)
+
+    return f"""
 ### {module.name} {ipynb} {py}
 {module.description}
 ```

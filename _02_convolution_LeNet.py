@@ -23,6 +23,20 @@ defaults = {
     "log_interval": 100
 }
 
+
+class Event(nn.Module):
+    def __init__(self, function, break_=False):
+        super().__init__()
+        self.function = function
+        self.break_ = break_
+
+    def forward(self, x):
+        self.function(x)
+        if self.break_:
+            exit()
+
+        return x
+
 class LambdaModule(nn.Module):
     def __init__(self, function):
         super().__init__()
@@ -31,35 +45,36 @@ class LambdaModule(nn.Module):
     def forward(self, x):
         return self.function(x)
 
+
 class Model(nn.Module):
 
     def __init__(self):
         super(Model, self).__init__()
 
-        scaled_tanh = LambdaModule(function=lambda x: 1.7159*torch.tanh(2*x/3))
+        ScaledTanh = lambda: LambdaModule(function=lambda x: 1.7159*torch.tanh(2*x/3))
 
         self.seq = nn.Sequential(
             nn.Conv2d(in_channels=1,
                       out_channels=6,
                       kernel_size=(5, 5),
                       padding=2),
-            scaled_tanh,
+            ScaledTanh(),
             nn.AvgPool2d(kernel_size=(2, 2),
                          stride=(2, 2)),
 
             nn.Conv2d(in_channels=6,
                       out_channels=16,
                       kernel_size=(5, 5)),
-            scaled_tanh,
+            ScaledTanh(),
             nn.AvgPool2d(kernel_size=(2, 2),
                          stride=(2, 2)),
 
             nn.Flatten(),
 
             nn.Linear(in_features=400, out_features=120),
-            scaled_tanh,
+            ScaledTanh(),
             nn.Linear(in_features=120, out_features=84),
-            scaled_tanh,
+            ScaledTanh(),
             nn.Linear(in_features=84, out_features=10)
         )
 
