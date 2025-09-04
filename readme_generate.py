@@ -3,6 +3,10 @@ import os
 import re
 import importlib
 
+header = """
+# Machine learning experiments
+"""
+
 files = [file[:-len(".py")] for file in os.listdir()
          if re.match(r"(_\d\d_.*)\.py", file)]
 
@@ -38,6 +42,8 @@ def template(metadata):
 ```
 """
 
-print("\n".join(map(template, metadata)))
+lines = [header] + list(map(template, metadata))
+print("\n".join(lines))
+
 with open("README.md", "w") as readme:
-    readme.writelines(map(template, metadata))
+    readme.writelines(lines)

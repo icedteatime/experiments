@@ -1,4 +1,6 @@
 
+# Machine learning experiments
+
 ### Convolution Example  [py](_01_convolution_example.py)
 
 Basic convolution.
@@ -87,4 +89,28 @@ Self-attention at the pixel level.
               (queries): Linear(in_features=8, out_features=8, bias=False)
               (values): Linear(in_features=8, out_features=4, bias=False)
 ...
+```
+
+### Autoencoder [nb](_06_autoencoder.ipynb) [py](_06_autoencoder.py)
+
+Basic autoencoder.
+
+#### t-SNE plot of encoded digits
+![tSNE](images/_06_autoencoder1.png)
+
+```
+(encode): Sequential(
+  (0): Conv2d(1, 4, kernel_size=(2, 2), stride=(2, 2))
+  (1): ReLU()
+  (2): Conv2d(4, 8, kernel_size=(2, 2), stride=(2, 2))
+  (3): ReLU()
+  (4): Flatten(start_dim=1, end_dim=-1)
+  (5): Linear(in_features=392, out_features=32, bias=True)
+)
+(decode): Sequential(
+  (0): Linear(in_features=32, out_features=392, bias=True)
+  (1): ReLU()
+  (2): Linear(in_features=392, out_features=784, bias=True)
+  (3): LambdaModule()
+)
 ```

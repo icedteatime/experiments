@@ -47,7 +47,8 @@ def print_lines(item, key: tuple = (0,), label="x", sample_only=True):
                 indices = "][".join(map(str, (*key, index)))
                 print({f"{label}[{indices}]": item[key][index]})
 
-def summary(item, label="x"):
+def summary(item, label=None):
+    label = label or "x"
     key = (0,)
     match item:
         case torch.Tensor(data=t):
