@@ -29,8 +29,8 @@ def template(metadata):
     model_lines = [line[min_space_prefix:]
                    for line in model_lines]
 
-    if len(model_lines) > 20:
-        model_lines = model_lines[:18] + ["..."]
+    if len(model_lines) > 15:
+        model_lines = model_lines[:13] + ["..."]
 
     model_description = "\n".join(model_lines)
 

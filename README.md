@@ -41,6 +41,11 @@ Example from https://github.com/pytorch/examples/blob/main/mnist/main.py
 Infer topology of training data. For MNIST that would be close to a 2D grid.
 A single linear layer acts as a correlation matrix.
 
+#### Correlations according to weight matrix
+![correlation plot](images/_03_determine_topology1.png)
+
+The blue diagonal along the middle means each pixel is strongly correlated with itself. The two red diagonals mean that pixels at a vertical distance of 2 are anticorrelated.
+
 ```
 (linear1): Linear(in_features=784, out_features=784, bias=False)
 ```
@@ -83,11 +88,6 @@ Self-attention at the pixel level.
         (0): LayerNorm((196, 8), eps=1e-05, elementwise_affine=True)
         (1): LambdaModule()
         (2): Parallel(
-          (networks): ModuleList(
-            (0-1): 2 x SelfAttention(
-              (keys): Linear(in_features=8, out_features=8, bias=False)
-              (queries): Linear(in_features=8, out_features=8, bias=False)
-              (values): Linear(in_features=8, out_features=4, bias=False)
 ...
 ```
 

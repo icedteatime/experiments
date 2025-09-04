@@ -14,19 +14,28 @@ from the_greatest_logging_ever import print, print_lines
 
 name = "Determine topology"
 description = """
-Infer topology of training data. For MNIST this would be close to a 2D grid.
+Infer topology of training data. For MNIST that would be close to a 2D grid.
+A single linear layer acts as a correlation matrix.
+
+#### Correlations according to weight matrix
+![correlation plot](images/_03_determine_topology1.png)
+
+The blue diagonal along the middle means each pixel is strongly correlated with itself. The two red diagonals mean that pixels at a vertical distance of 2 are anticorrelated.
 """
 
 defaults = {
-    "batch_size": 64,
-    "epochs": 14,
+    "batch_size": 2048,
+    "epochs": 24,
     "learning_rate": 1e-3,
-    "log_interval": 100
+    "log_interval": 10
 }
 
-def permutation_make(reference_array):
-    shape = reference_array.shape
-    n = reference_array.size
+def permutation_make(shape):
+    """
+    Create a positional permutation/unpermutation function pair for arrays with a given shape.
+    """
+
+    n = np.array(shape).prod().item()
 
     permutation = dict(zip(range(n), np.random.choice(range(n), n, replace=False).tolist()))
     permutation_inverse = dict(sorted(dict(map(reversed, permutation.items())).items()))
@@ -49,8 +58,6 @@ class Model(nn.Module):
 
     def forward(self, x):
         x = self.linear1(x)
-        # print_lines(x, (0,))
-        # exit()
         return x
 
 
@@ -104,25 +111,26 @@ def run(**kwargs):
     train_kwargs.update(accel_kwargs)
     test_kwargs.update(accel_kwargs)
 
-    permute, unpermute = permutation_make(np.zeros((1, 28, 28)))
-    permutation = permute(np.arange(28*28)).flatten()
-    unpermutation = unpermute(np.arange(28*28)).flatten()
-    print({"Permutation": permutation})
+    permute, unpermute = permutation_make(shape=(1, 28, 28))
 
     transform=transforms.Compose([
         transforms.ToTensor(),
+        # lambda x: 2*x - 1,
         # lambda x: x.transpose(-2, -1),
         permute,
         torch.flatten
         ])
 
     print({"Transform": transform.transforms})
-    # print({"Transform": dir(transform)})
 
     dataset1 = datasets.MNIST("datasets", train=True, download=True, transform=transform)
     dataset2 = datasets.MNIST("datasets", train=False, transform=transform)
     train_loader = torch.utils.data.DataLoader(dataset1, **train_kwargs, drop_last=True)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
+
+    permutation = permute(np.arange(28*28)).flatten()
+    unpermutation = unpermute(np.arange(28*28)).flatten()
+    print({"Permutation": permutation})
 
     model = Model().to(device)
     model.permutation = permutation
