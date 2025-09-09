@@ -111,6 +111,28 @@ Basic autoencoder.
   (0): Linear(in_features=32, out_features=392, bias=True)
   (1): ReLU()
   (2): Linear(in_features=392, out_features=784, bias=True)
-  (3): LambdaModule()
+  (3): LambdaModule(lambda x: x.reshape(-1, 1, 28, 28))
 )
+```
+
+### All the activations  [py](_07_all_the_activations.py)
+
+If you're having trouble deciding between activations, just use all of them. Easy.
+Includes a skip connection, which can be considered the null activation, very cool.
+
+```
+(sequence): Sequential(
+  (0): Conv2d(1, 16, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2))
+  (1): LayerNorm((30, 30), eps=1e-05, elementwise_affine=True)
+  (2): ReLU()
+  (3): Dropout(p=0.5, inplace=False)
+  (4): AvgPool2d(kernel_size=(2, 2), stride=(2, 2), padding=0)
+  (5): Conv2d(16, 16, kernel_size=(3, 3), stride=(1, 1))
+  (6): LayerNorm((13, 13), eps=1e-05, elementwise_affine=True)
+  (7): ReLU()
+  (8): Dropout(p=0.5, inplace=False)
+  (9): AvgPool2d(kernel_size=(2, 2), stride=(2, 2), padding=0)
+  (10): Flatten(start_dim=1, end_dim=-1)
+  (11): Linear(in_features=576, out_features=128, bias=True)
+...
 ```
