@@ -14,9 +14,12 @@ from the_greatest_logging_ever import print, print_lines, summary
 
 
 name = "All the activations"
-description = """
+description = lambda params: f"""
 If you're having trouble deciding between activations, just use all of them. Easy.
 Includes a skip connection, which can be considered the null activation, very cool.
+```python
+{params["block1"]}
+```
 """
 
 defaults = {
@@ -102,6 +105,7 @@ class Model(nn.Module):
                 nn.Flatten(),
             )
 
+        # [](block1)
         activation = lambda input_size: nn.Sequential(
             Parallel([
                 LambdaModule(lambda x: x),

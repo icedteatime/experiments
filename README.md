@@ -115,10 +115,26 @@ Basic autoencoder.
 )
 ```
 
-### All the activations  [py](_07_all_the_activations.py)
+### All the activations  [py](_07_all_the_activations.py#L109)
 
 If you're having trouble deciding between activations, just use all of them. Easy.
 Includes a skip connection, which can be considered the null activation, very cool.
+```python
+activation = lambda input_size: nn.Sequential(
+    Parallel([
+        LambdaModule(lambda x: x),
+        nn.ReLU(),
+        nn.GELU(),
+        nn.Sigmoid(),
+        nn.LeakyReLU(),
+        nn.LogSigmoid(),
+        SoftmaxGrouped(group_size=4),
+        SoftmaxGrouped(group_size=8, permute_size=input_size),
+        Conv1d(4),
+        Conv1d(8, permute_size=input_size),
+    ])
+)
+```
 
 ```
 (sequence): Sequential(
