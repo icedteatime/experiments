@@ -120,20 +120,18 @@ Basic autoencoder.
 If you're having trouble deciding between activations, just use all of them. Easy.
 Includes a skip connection, which can be considered the null activation, very cool.
 ```python
-activation = lambda input_size: nn.Sequential(
-    Parallel([
-        LambdaModule(lambda x: x),
-        nn.ReLU(),
-        nn.GELU(),
-        nn.Sigmoid(),
-        nn.LeakyReLU(),
-        nn.LogSigmoid(),
-        SoftmaxGrouped(group_size=4),
-        SoftmaxGrouped(group_size=8, permute_size=input_size),
-        Conv1d(4),
-        Conv1d(8, permute_size=input_size),
-    ])
-)
+activation = lambda input_size: Parallel([
+    LambdaModule(lambda x: x),
+    nn.ReLU(),
+    nn.GELU(),
+    nn.Sigmoid(),
+    nn.LeakyReLU(),
+    nn.LogSigmoid(),
+    SoftmaxGrouped(group_size=4),
+    SoftmaxGrouped(group_size=8, permute_size=input_size),
+    Conv1d(4),
+    Conv1d(8, permute_size=input_size),
+])
 ```
 
 ```
@@ -150,5 +148,27 @@ activation = lambda input_size: nn.Sequential(
   (9): AvgPool2d(kernel_size=(2, 2), stride=(2, 2), padding=0)
   (10): Flatten(start_dim=1, end_dim=-1)
   (11): Linear(in_features=576, out_features=128, bias=True)
+...
+```
+
+### Staged networks  [py](_08_staged_networks.py#L117)
+
+First fully train one network on a task. Freeze its weights and attach a new network.
+Train the combined network and repeat.
+
+```
+(sequence): ExpansionSerial(
+  (networks): ModuleList(
+    (0): Flatten(start_dim=1, end_dim=-1)
+    (1): ExpansionParallel(
+      (networks): ModuleList(
+        (0-9): 10 x Sequential(
+          (0): RandomSample()
+          (1): Residual(
+            (network): Sequential(
+              (0): Linear(in_features=16, out_features=16, bias=True)
+              (1): LayerNorm((16,), eps=1e-05, elementwise_affine=True)
+              (2): ReLU()
+            )
 ...
 ```

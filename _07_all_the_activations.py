@@ -106,20 +106,18 @@ class Model(nn.Module):
             )
 
         # [](block1)
-        activation = lambda input_size: nn.Sequential(
-            Parallel([
-                LambdaModule(lambda x: x),
-                nn.ReLU(),
-                nn.GELU(),
-                nn.Sigmoid(),
-                nn.LeakyReLU(),
-                nn.LogSigmoid(),
-                SoftmaxGrouped(group_size=4),
-                SoftmaxGrouped(group_size=8, permute_size=input_size),
-                Conv1d(4),
-                Conv1d(8, permute_size=input_size),
-            ])
-        )
+        activation = lambda input_size: Parallel([
+            LambdaModule(lambda x: x),
+            nn.ReLU(),
+            nn.GELU(),
+            nn.Sigmoid(),
+            nn.LeakyReLU(),
+            nn.LogSigmoid(),
+            SoftmaxGrouped(group_size=4),
+            SoftmaxGrouped(group_size=8, permute_size=input_size),
+            Conv1d(4),
+            Conv1d(8, permute_size=input_size),
+        ])
 
         self.sequence = nn.Sequential(
             nn.Conv2d(in_channels=1,
