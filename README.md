@@ -46,6 +46,12 @@ A single linear layer acts as a correlation matrix.
 
 The blue diagonal along the middle means each pixel is strongly correlated with itself. The two red diagonals mean that pixels at a vertical distance of 2 are anticorrelated.
 
+#### Topology based on a threshold
+![graph](images/_03_determine_topology2.png)
+
+Since this is the "data topology", it doesn't actually match the grid and isn't planar.
+
+
 ```
 (linear1): Linear(in_features=784, out_features=784, bias=False)
 ```

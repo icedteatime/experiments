@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 
-from the_greatest_logging_ever import print, print_lines
+from the_greatest_logging_ever import print
 
 
 name = "Determine topology"
@@ -21,6 +21,12 @@ A single linear layer acts as a correlation matrix.
 ![correlation plot](images/_03_determine_topology1.png)
 
 The blue diagonal along the middle means each pixel is strongly correlated with itself. The two red diagonals mean that pixels at a vertical distance of 2 are anticorrelated.
+
+#### Topology based on a threshold
+![graph](images/_03_determine_topology2.png)
+
+Since this is the "data topology", it doesn't actually match the grid and isn't planar.
+
 """
 
 defaults = {
