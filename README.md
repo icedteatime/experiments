@@ -157,7 +157,7 @@ activation = lambda input_size: Parallel([
 ...
 ```
 
-### Staged networks  [py](_08_staged_networks.py#L117)
+### Staged networks  [py](_08_staged_networks.py#L119)
 
 First fully train one network on a task. Freeze its weights and attach a new network.
 Train the combined network and repeat.
@@ -178,3 +178,9 @@ Train the combined network and repeat.
             )
 ...
 ```
+
+### Softfloor [nb](_09_softfloor.ipynb) [py](_09_softfloor.py)
+
+Softfloor function based on sigmoid.
+
+![softfloor](images/_09_softfloor1.svg)
