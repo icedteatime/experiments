@@ -44,7 +44,7 @@ def softfloor_make(factor=1e-4):
     return f
 
 def wavy_identity_make(factor=0.01):
-    assert factor > 1e-2 - 1e-5, f"Value of {factor} violates squiggle-identity aesthetics."
+    assert factor >= 1e-2, f"Value of {factor} violates squiggle-identity aesthetics."
 
     sf = softfloor_make(factor)
 
