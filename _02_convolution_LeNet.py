@@ -12,8 +12,12 @@ from the_greatest_logging_ever import print, print_lines
 
 
 name = "LeNet"
-description = """
+description = lambda metadata: f"""
 [LeNet](https://en.wikipedia.org/wiki/LeNet)-like.
+
+```
+{metadata["ModelDescription"]}
+```
 """
 
 defaults = {
@@ -44,6 +48,55 @@ class LambdaModule(nn.Module):
 
     def forward(self, x):
         return self.function(x)
+
+    def __repr__(self):
+        import inspect
+        import ast
+
+        source = inspect.getsource(self.function)
+        source = source.strip()
+
+        format = lambda x: f"LambdaModule({x})"
+
+        # find inline definition
+        parsed = ast.parse(source)
+        while True:
+            match parsed:
+                case (ast.Module([node, *_]) |
+                      ast.Assign(value=node) |
+                      ast.Lambda(body=node)):
+                    parsed = node
+
+                case (ast.Call(func=ast.Name("LambdaModule"),
+                               args=[ast.Lambda(body=body)]) |
+                      ast.Call(func=ast.Name("LambdaModule"),
+                               keywords=[ast.keyword("function", ast.Lambda(body=body))])):
+                    src = ast.get_source_segment(source, body)
+                    return format(src)
+
+                case other:
+                    print({"Other": other})
+                    break
+
+        # find secondary definition
+        parsed = ast.parse(source)
+        while True:
+            match parsed:
+                case (ast.Module([node, *_]) |
+                      ast.Assign(value=node)):
+                    parsed = node
+
+                case (ast.Lambda(body=body) |
+                      ast.FunctionDef(body=[ast.Return(body), *_])):
+                    src = ast.get_source_segment(source, body)
+                    return format(src)
+
+                case (ast.FunctionDef(body=[body, *_])):
+                    src = ast.get_source_segment(source, body)
+                    return format(src + "...")
+
+                case other:
+                    assert False
 
 
 class Model(nn.Module):

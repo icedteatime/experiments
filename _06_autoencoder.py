@@ -14,11 +14,15 @@ from the_greatest_logging_ever import print, print_lines, summary
 
 
 name = "Autoencoder"
-description = """
+description = lambda metadata: f"""
 Basic autoencoder.
 
 #### t-SNE plot of encoded digits
 ![tSNE](images/_06_autoencoder1.png)
+
+```
+{metadata["ModelDescription"]}
+```
 """
 
 defaults = {

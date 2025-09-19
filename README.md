@@ -6,14 +6,6 @@
 Basic convolution.
 Example from https://github.com/pytorch/examples/blob/main/mnist/main.py
 
-```
-(conv1): Conv2d(1, 32, kernel_size=(3, 3), stride=(1, 1))
-(conv2): Conv2d(32, 64, kernel_size=(3, 3), stride=(1, 1))
-(dropout1): Dropout(p=0.25, inplace=False)
-(dropout2): Dropout(p=0.5, inplace=False)
-(fc1): Linear(in_features=9216, out_features=128, bias=True)
-(fc2): Linear(in_features=128, out_features=10, bias=True)
-```
 
 ### LeNet  [py](_02_convolution_LeNet.py)
 
@@ -22,19 +14,20 @@ Example from https://github.com/pytorch/examples/blob/main/mnist/main.py
 ```
 (seq): Sequential(
   (0): Conv2d(1, 6, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2))
-  (1): LambdaModule()
+  (1): LambdaModule(1.7159*torch.tanh(2*x/3))
   (2): AvgPool2d(kernel_size=(2, 2), stride=(2, 2), padding=0)
   (3): Conv2d(6, 16, kernel_size=(5, 5), stride=(1, 1))
-  (4): LambdaModule()
+  (4): LambdaModule(1.7159*torch.tanh(2*x/3))
   (5): AvgPool2d(kernel_size=(2, 2), stride=(2, 2), padding=0)
   (6): Flatten(start_dim=1, end_dim=-1)
   (7): Linear(in_features=400, out_features=120, bias=True)
-  (8): LambdaModule()
+  (8): LambdaModule(1.7159*torch.tanh(2*x/3))
   (9): Linear(in_features=120, out_features=84, bias=True)
-  (10): LambdaModule()
+  (10): LambdaModule(1.7159*torch.tanh(2*x/3))
   (11): Linear(in_features=84, out_features=10, bias=True)
 )
 ```
+
 
 ### Determine topology [nb](_03_determine_topology.ipynb) [py](_03_determine_topology.py)
 
@@ -42,60 +35,29 @@ Infer topology of training data. For MNIST that would be close to a 2D grid.
 A single linear layer acts as a correlation matrix.
 
 #### Correlations according to weight matrix
-![correlation plot](images/_03_determine_topology1.png)
+<img alt="correlation plot" src="images/_03_determine_topology1.png" width="405" height="467">
 
 The blue diagonal along the middle means each pixel is strongly correlated with itself. The two red diagonals mean that pixels at a vertical distance of 2 are anticorrelated.
 
 #### Topology based on a threshold
-![graph](images/_03_determine_topology2.png)
+<img alt="graph" src="images/_03_determine_topology2.png" width="440" height="546">
 
 Since this is the "data topology", it doesn't actually match the grid and isn't planar.
-
 
 ```
 (linear1): Linear(in_features=784, out_features=784, bias=False)
 ```
 
+
 ### Comparative [nb](_04_comparative.ipynb) [py](_04_comparative.py)
 
 Ask network to determine if two input images are the same. Similar to k-nearest neighbors.
 
-```
-(sequence): Sequential(
-  (0): Conv2d(2, 32, kernel_size=(3, 3), stride=(1, 1), groups=2)
-  (1): ReLU()
-  (2): Conv2d(32, 64, kernel_size=(3, 3), stride=(1, 1), groups=2)
-  (3): ReLU()
-  (4): MaxPool2d(kernel_size=(2, 2), stride=(2, 2), padding=0, dilation=1, ceil_mode=False)
-  (5): Dropout2d(p=0.15, inplace=False)
-  (6): Flatten(start_dim=1, end_dim=-1)
-  (7): Linear(in_features=9216, out_features=128, bias=True)
-  (8): ReLU()
-  (9): Dropout(p=0.25, inplace=False)
-  (10): Linear(in_features=128, out_features=2, bias=True)
-)
-```
 
 ### Self-attention  [py](_05_self_attention.py)
 
 Self-attention at the pixel level.
 
-```
-(embedding): Embedding(32, 8)
-(positional_embedding): Embedding(196, 8)
-(sequence): Sequential(
-  (0): MaxPool2d(kernel_size=(2, 2), stride=(2, 2), padding=0, dilation=1, ceil_mode=False)
-  (1): Flatten(start_dim=1, end_dim=-1)
-  (2): LambdaModule()
-  (3): Embedding(32, 8)
-  (4): Sequential(
-    (0): Residual(
-      (network): Sequential(
-        (0): LayerNorm((196, 8), eps=1e-05, elementwise_affine=True)
-        (1): LambdaModule()
-        (2): Parallel(
-...
-```
 
 ### Autoencoder [nb](_06_autoencoder.ipynb) [py](_06_autoencoder.py)
 
@@ -121,6 +83,7 @@ Basic autoencoder.
 )
 ```
 
+
 ### All the activations  [py](_07_all_the_activations.py#L109)
 
 If you're having trouble deciding between activations, just use all of them. Easy.
@@ -140,24 +103,8 @@ activation = lambda input_size: Parallel([
 ])
 ```
 
-```
-(sequence): Sequential(
-  (0): Conv2d(1, 16, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2))
-  (1): LayerNorm((30, 30), eps=1e-05, elementwise_affine=True)
-  (2): ReLU()
-  (3): Dropout(p=0.5, inplace=False)
-  (4): AvgPool2d(kernel_size=(2, 2), stride=(2, 2), padding=0)
-  (5): Conv2d(16, 16, kernel_size=(3, 3), stride=(1, 1))
-  (6): LayerNorm((13, 13), eps=1e-05, elementwise_affine=True)
-  (7): ReLU()
-  (8): Dropout(p=0.5, inplace=False)
-  (9): AvgPool2d(kernel_size=(2, 2), stride=(2, 2), padding=0)
-  (10): Flatten(start_dim=1, end_dim=-1)
-  (11): Linear(in_features=576, out_features=128, bias=True)
-...
-```
 
-### Staged networks  [py](_08_staged_networks.py#L119)
+### Staged networks  [py](_08_staged_networks.py#L123)
 
 First fully train one network on a task. Freeze its weights and attach a new network.
 Train the combined network and repeat.
@@ -175,12 +122,30 @@ Train the combined network and repeat.
               (0): Linear(in_features=16, out_features=16, bias=True)
               (1): LayerNorm((16,), eps=1e-05, elementwise_affine=True)
               (2): ReLU()
-            )
+              (3): Dropout(p=0.5, inplace=False)
 ...
 ```
+
 
 ### Softfloor [nb](_09_softfloor.ipynb) [py](_09_softfloor.py)
 
 Softfloor function based on sigmoid.
 
 ![softfloor](images/_09_softfloor1.svg)
+
+```python
+def softfloor_make(factor=1e-4):
+    factor = 1 + factor
+    equation = sympy.Eq(1, factor*(2 / (1 + sympy.exp(-sympy.symbols("x"))) - 1))
+    adjustment = float(sympy.solve(equation)[0])
+
+    def f(xs):
+        floor = torch.floor(xs + 0.5)
+        xs = xs - floor
+        ys = floor + factor*((1 / (1 + torch.exp(-(2*xs)*adjustment))) - 1)
+
+        return ys + 0.5*factor - 0.5
+
+    return f
+```
+

@@ -15,9 +15,13 @@ from the_greatest_logging_ever import print, print_lines, summary
 
 
 name = "Staged networks"
-description = """
+description = lambda metadata: f"""
 First fully train one network on a task. Freeze its weights and attach a new network.
 Train the combined network and repeat.
+
+```
+{metadata["ModelDescriptionEllipsized"]}
+```
 """
 
 defaults = {

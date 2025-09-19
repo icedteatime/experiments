@@ -15,10 +15,15 @@ from the_greatest_logging_ever import print, print_lines, summary
 
 
 name = "Softfloor"
-description = """
+
+import inspect
+description = lambda metadata: f"""
 Softfloor function based on sigmoid.
 
 ![softfloor](images/_09_softfloor1.svg)
+
+```python
+{inspect.getsource(metadata["PythonModule"].softfloor_make)}```
 """
 
 defaults = {

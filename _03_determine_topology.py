@@ -13,20 +13,23 @@ from the_greatest_logging_ever import print
 
 
 name = "Determine topology"
-description = """
+description = lambda metadata: f"""
 Infer topology of training data. For MNIST that would be close to a 2D grid.
 A single linear layer acts as a correlation matrix.
 
 #### Correlations according to weight matrix
-![correlation plot](images/_03_determine_topology1.png)
+<img alt="correlation plot" src="images/_03_determine_topology1.png" width="405" height="467">
 
 The blue diagonal along the middle means each pixel is strongly correlated with itself. The two red diagonals mean that pixels at a vertical distance of 2 are anticorrelated.
 
 #### Topology based on a threshold
-![graph](images/_03_determine_topology2.png)
+<img alt="graph" src="images/_03_determine_topology2.png" width="440" height="546">
 
 Since this is the "data topology", it doesn't actually match the grid and isn't planar.
 
+```
+{metadata["ModelDescription"]}
+```
 """
 
 defaults = {

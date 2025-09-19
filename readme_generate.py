@@ -7,13 +7,15 @@ header = """
 # Machine learning experiments
 """
 
-files = [file[:-len(".py")] for file in os.listdir()
-         if re.match(r"(_\d\d_.*)\.py", file)]
+fileinfos = [match
+             for file in os.listdir()
+             if (match := re.match(r"(?P<Filename>_(?P<Index>\d\d)_.*)\.py", file))]
 
-metadata = [{"Module": importlib.import_module(file),
-             ".py": f"{file}.py",
-             ".ipynb": f"{file}.ipynb" if os.path.exists(f"{file}.ipynb") else None}
-            for file in sorted(files)]
+metadata = [{"Module": importlib.import_module(fileinfo["Filename"]),
+             ".py": f"{fileinfo["Filename"]}.py",
+             ".ipynb": f"{fileinfo["Filename"]}.ipynb" if os.path.exists(f"{fileinfo["Filename"]}.ipynb") else None,
+             "Index": fileinfo["Index"]}
+            for fileinfo in sorted(fileinfos, key=lambda x: int(x["Index"]))]
 
 def file_partition(filename):
     """
@@ -24,7 +26,7 @@ def file_partition(filename):
     with open(filename) as f:
         lines = f.read().splitlines()
 
-    annotations = [re.search(r"\[\]\((?P<block_name>.+)\)", line)
+    annotations = [re.search(r"\[\]\((?P<BlockName>.*)\)", line)
                    for line in lines]
     blank_lines = [re.search(r"^s*$", line)
                    for line in lines]
@@ -38,7 +40,7 @@ def file_partition(filename):
     line_numbers = {}
     for pair in re.finditer(r"\(.*?\)", stringified):
         block_start, block_end = pair.span()
-        block_name = annotations[block_start]["block_name"]
+        block_name = annotations[block_start]["BlockName"]
         block_lines = lines[block_start+1:block_end-1]
         block_lines = deindent_lines(block_lines)
 
@@ -68,15 +70,18 @@ def template(metadata):
 
     model_description = str(module.Model())
     model_lines = model_description.splitlines()
-    model_lines = model_lines[1:-1]
+    if len(model_lines) > 1:
+        model_lines = model_lines[1:-1]
 
     model_lines = deindent_lines(model_lines)
-    model_lines = ellipsize_lines(model_lines)
-    model_description = "\n".join(model_lines)
+    model_lines_ellipsized = ellipsize_lines(model_lines)
 
     module_description = module.description
     if callable(module.description):
         partitions, _ = file_partition(metadata[".py"])
+        partitions["ModelDescription"] = "\n".join(model_lines)
+        partitions["ModelDescriptionEllipsized"] = "\n".join(model_lines_ellipsized)
+        partitions["PythonModule"] = module
         module_description = module.description(partitions)
 
     # set python link as first block if there is one
@@ -87,9 +92,6 @@ def template(metadata):
     return f"""
 ### {module.name} {ipynb} {py}
 {module_description}
-```
-{model_description}
-```
 """
 
 lines = [header] + list(map(template, metadata))
